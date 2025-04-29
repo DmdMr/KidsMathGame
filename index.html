@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kids Math Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 125%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background-color: #f0f8ff;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+    #restartBtn {
+      align-self: flex-start;
+      margin-left: 20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .controls, .problem, .result, .summary {
+      margin: 15px;
+    }
+    .range-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .range-table th, .range-table td {
+      padding: 10px;
+      text-align: center;
+    }
+    input[type="number"], input[type="checkbox"] {
+      height: 40px;
+      font-size: 1em;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    input[type="checkbox"] {
+      width: 20px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .problem span {
+      font-size: 28px;
+    }
+    .hidden {
+      display: none;
+    }
+    .summary div {
+      margin: 5px 0;
+    }
+    .correct { color: green; }
+    .incorrect { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Kids Math Game</h1>
+  <button id="restartBtn" onclick="restartGame()">Restart</button>
+
+  <div class="controls" id="controls">
+    <label for="totalProblems">Number of problems:</label>
+    <input type="number" id="totalProblems" value="5" min="1" /><br /><br />
+    <table class="range-table">
+      <tr>
+        <th>Operation</th>
+        <th>Enabled</th>
+        <th>From</th>
+        <th>To</th>
+      </tr>
+      <tr>
+        <td>Addition</td>
+        <td><input type="checkbox" id="add" checked /></td>
+        <td><input type="number" id="addMin" value="1" /></td>
+        <td><input type="number" id="addMax" value="100" /></td>
+      </tr>
+      <tr>
+        <td>Subtraction</td>
+        <td><input type="checkbox" id="sub" /></td>
+        <td><input type="number" id="subMin" value="1" /></td>
+        <td><input type="number" id="subMax" value="100" /></td>
+      </tr>
+      <tr>
+        <td>Multiplication</td>
+        <td><input type="checkbox" id="mul" /></td>
+        <td><input type="number" id="mulMin" value="1" /></td>
+        <td><input type="number" id="mulMax" value="10" /></td>
+      </tr>
+      <tr>
+        <td>Division</td>
+        <td><input type="checkbox" id="div" /></td>
+        <td><input type="number" id="divMin" value="1" /></td>
+        <td><input type="number" id="divMax" value="10" /></td>
+      </tr>
+    </table>
+    <button onclick="startGame()" style="width: 100%">Start</button>
+  </div>
+
+  <div class="problem hidden">
+    <span id="question"></span><br><br>
+    <input type="number" id="answer" placeholder="Your answer" />
+    <button onclick="checkAnswer()" id="checkBtn">Check</button>
+    <button onclick="nextProblem()" class="hidden" id="nextBtn">Next</button>
+  </div>
+
+  <div class="result"></div>
+  <div class="summary hidden" id="summary"></div>
+
+  <script>
+    let currentAnswer = 0;
+    let total = 0;
+    let current = 0;
+    let score = 0;
+    let log = [];
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function startGame() {
+      total = parseInt(document.getElementById('totalProblems').value);
+      if (isNaN(total) || total < 1) total = 5;
+      current = 0;
+      score = 0;
+      log = [];
+      document.getElementById('controls').classList.add('hidden');
+      document.getElementById('summary').classList.add('hidden');
+      document.getElementById('restartBtn').style.display = 'none';
+      generateProblem();
+    }
+
+    function restartGame() {
+      document.getElementById('controls').classList.remove('hidden');
+      document.querySelector('.problem').classList.add('hidden');
+      document.querySelector('.result').textContent = '';
+      document.getElementById('summary').innerHTML = '';
+      document.getElementById('summary').classList.add('hidden');
+      document.getElementById('restartBtn').style.display = 'none';
+    }
+
+    function generateProblem() {
+      if (current >= total) return showSummary();
+
+      const ops = [];
+      if (document.getElementById('add').checked) ops.push('add');
+      if (document.getElementById('sub').checked) ops.push('sub');
+      if (document.getElementById('mul').checked) ops.push('mul');
+      if (document.getElementById('div').checked) ops.push('div');
+
+      if (ops.length === 0) {
+        alert('Please select at least one operation.');
+        return;
+      }
+
+      const op = ops[Math.floor(Math.random() * ops.length)];
+      let a, b;
+      let question;
+
+      switch (op) {
+        case 'add':
+          a = getRandomInt(+document.getElementById('addMin').value, +document.getElementById('addMax').value);
+          b = getRandomInt(+document.getElementById('addMin').value, +document.getElementById('addMax').value);
+          currentAnswer = a + b;
+          question = `${a} + ${b} = ?`;
+          break;
+        case 'sub':
+          a = getRandomInt(+document.getElementById('subMin').value, +document.getElementById('subMax').value);
+          b = getRandomInt(+document.getElementById('subMin').value, +document.getElementById('subMax').value);
+          if (b > a) [a, b] = [b, a];
+          currentAnswer = a - b;
+          question = `${a} - ${b} = ?`;
+          break;
+        case 'mul':
+          a = getRandomInt(+document.getElementById('mulMin').value, +document.getElementById('mulMax').value);
+          b = getRandomInt(+document.getElementById('mulMin').value, +document.getElementById('mulMax').value);
+          currentAnswer = a * b;
+          question = `${a} × ${b} = ?`;
+          break;
+        case 'div':
+          b = getRandomInt(+document.getElementById('divMin').value, +document.getElementById('divMax').value);
+          currentAnswer = getRandomInt(+document.getElementById('divMin').value, +document.getElementById('divMax').value);
+          a = currentAnswer * b;
+          question = `${a} ÷ ${b} = ?`;
+          break;
+      }
+
+      document.getElementById('question').textContent = question;
+      document.querySelector('.problem').classList.remove('hidden');
+      document.querySelector('.result').textContent = '';
+      document.getElementById('answer').value = '';
+      document.getElementById('nextBtn').classList.add('hidden');
+      document.getElementById('checkBtn').classList.remove('hidden');
+    }
+
+    function checkAnswer() {
+      const userAnswer = parseFloat(document.getElementById('answer').value);
+      const result = document.querySelector('.result');
+      const isCorrect = userAnswer === currentAnswer;
+      if (isCorrect) {
+        result.textContent = `Correct! 🎉 Score: ${score + 1} / ${total}`;
+        result.style.color = 'green';
+        score++;
+      } else {
+        result.textContent = `Wrong. The correct answer was ${currentAnswer}. Score: ${score} / ${total}`;
+        result.style.color = 'red';
+      }
+      log.push({ question: document.getElementById('question').textContent, userAnswer, correctAnswer: currentAnswer, correct: isCorrect });
+      current++;
+      document.getElementById('nextBtn').classList.remove('hidden');
+      document.getElementById('checkBtn').classList.add('hidden');
+    }
+
+    function nextProblem() {
+      generateProblem();
+    }
+
+    function showSummary() {
+      document.querySelector('.problem').classList.add('hidden');
+      const summaryDiv = document.getElementById('summary');
+      summaryDiv.innerHTML = `<h2>Summary</h2><div>Score: ${score} / ${total}</div>` +
+        log.map(entry => `<div class="${entry.correct ? 'correct' : 'incorrect'}">${entry.question.replace('?', entry.userAnswer)} → ${entry.correctAnswer}</div>`).join('');
+      summaryDiv.classList.remove('hidden');
+      document.getElementById('restartBtn').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
